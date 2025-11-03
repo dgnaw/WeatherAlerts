@@ -3,6 +3,8 @@ package com.practice.project.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 // Model thiết lập cảnh báo
@@ -27,5 +29,7 @@ public class AlertPreference {
     private String notificationChannel; // kênh gửi thông báo (EMAIL, SMS hay PUSH)
 
     private Boolean isActive;
+
+    private LocalDateTime createdAt;
 
 }

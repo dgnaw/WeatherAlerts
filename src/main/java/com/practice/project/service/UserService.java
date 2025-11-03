@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -85,6 +86,10 @@ public class UserService {
             throw new UserNotFoundException("User not found with ID");
         }
         userRepository.deleteById(id);
+    }
+
+    public Optional<User> findUserById(Long id){
+        return userRepository.findById(id);
     }
 
 }
