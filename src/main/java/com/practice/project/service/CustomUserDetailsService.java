@@ -8,6 +8,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
+/* Đóng vai trò làm cầu nối để Spring Security biết cách tải thông tin người dùng từ cơ sở dữ liệu
+( Hoạt động ẩn với cơ chế bảo mật. Sẽ tự động khi cần xác thực người dùng)
+Quá trình :
+- Kích hoạt bởi AuthenticationManager
+- Tải dữ liệu và so sánh mật khẩu
+- Lưu ID vào context
+*/
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
