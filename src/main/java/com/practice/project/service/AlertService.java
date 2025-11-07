@@ -151,4 +151,9 @@ public class AlertService {
 
         alertPreferenceRepository.deleteById(alertId);
     }
+
+    @Transactional()
+    public List<AlertPreference> findAllActiveAlerts() {
+        return alertPreferenceRepository.findByIsActiveTrue();
+    }
 }

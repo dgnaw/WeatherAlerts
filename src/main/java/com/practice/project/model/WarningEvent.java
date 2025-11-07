@@ -21,7 +21,9 @@ public class WarningEvent {
     private Location location;
 
     private LocalDateTime triggeredTime;
-    private String message;
+
+    private String warningType;
+
     private Double actualValue;
     private Boolean isSentSuccessfully;
 }

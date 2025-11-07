@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface AlertPreferenceRepository extends JpaRepository<AlertPreference, Long> {
    List<AlertPreference> findByUserUserId(Long userId);
+   List<AlertPreference> findByIsActiveTrue();
 }
