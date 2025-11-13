@@ -2,6 +2,7 @@ package com.practice.project.service;
 
 import com.practice.project.dto.AlertRequestDTO;
 import com.practice.project.dto.AlertResponseDTO;
+import com.practice.project.dto.GeocodingResponseDTO;
 import com.practice.project.exception.AlertNotFoundException;
 import com.practice.project.exception.UserNotFoundException;
 import com.practice.project.model.AlertPreference;
@@ -27,13 +28,16 @@ public class AlertService {
     private final UserService userService;
     private final RestTemplate restTemplate;
 
+    private final WeatherClientService weatherClientService;
+
     public AlertService(AlertPreferenceRepository alertPreferenceRepository,
-                        LocationRepository locationRepository,UserService userService,
-                        RestTemplate restTemplate) {
+                        LocationRepository locationRepository, UserService userService,
+                        RestTemplate restTemplate, WeatherClientService weatherClientService) {
         this.alertPreferenceRepository = alertPreferenceRepository;
         this.userService = userService;
         this.locationRepository = locationRepository;
         this.restTemplate = restTemplate;
+        this.weatherClientService = weatherClientService;
     }
 
     private Location findOrCreateLocation(String cityName){
@@ -43,14 +47,19 @@ public class AlertService {
             return existingLocation.get();
         }
 
-        // Giả định đối tượng để tiếp tục
-        Location newLocation = new Location();
-        newLocation.setCityName(cityName);
-        newLocation.setCountryCode("VN");
-        newLocation.setLatitude(21.0285);
-        newLocation.setLongitude(105.8542);
+        try{
+            GeocodingResponseDTO geoData = weatherClientService.getCoordinates(cityName);
 
-        return locationRepository.save(newLocation);
+            Location newLocation = new Location();
+            newLocation.setCityName(geoData.getName());
+            newLocation.setCountryCode(geoData.getCountry());
+            newLocation.setLatitude(geoData.getLat());
+            newLocation.setLongitude(geoData.getLon());
+
+            return locationRepository.save(newLocation);
+        }catch(Exception e){
+            throw new IllegalArgumentException("Khong tim thay thanh pho: " + cityName);
+        }
 
     }
 

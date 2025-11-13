@@ -1,5 +1,6 @@
 package com.practice.project.service;
 
+import com.practice.project.dto.GeocodingResponseDTO;
 import com.practice.project.dto.OpenWeatherAPIDTO;
 import com.practice.project.dto.WeatherResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,8 @@ public class WeatherClientService {
 
     @Value("${openweathermap.api.key}")
     private String apiKey;
+
+    private final String GEO_API_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
     public WeatherClientService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -70,6 +73,26 @@ public class WeatherClientService {
         }catch (Exception e){
             System.err.println("Error fetching weather data: " + e.getMessage());
             throw new RuntimeException("Failed to retrieve weather data", e);
+        }
+    }
+
+    public GeocodingResponseDTO getCoordinates(String cityName){
+        String url = UriComponentsBuilder.fromUriString(GEO_API_URL)
+                .queryParam("q", cityName)
+                .queryParam("limit", 1)
+                .queryParam("appid", apiKey)
+                .toUriString();
+        try{
+            GeocodingResponseDTO[] response = restTemplate.getForObject(url, GeocodingResponseDTO[].class);
+
+            if (response != null && response.length > 0) {
+                return response[0];
+            }else{
+                throw new RuntimeException("City not found: " + cityName);
+            }
+        }catch (Exception e){
+            System.err.println("Error fetching coordinates: " + e.getMessage());
+            throw new RuntimeException("Failed to retrieve coordinates for city: " + cityName, e);
         }
     }
 }
