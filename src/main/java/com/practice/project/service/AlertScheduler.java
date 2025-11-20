@@ -76,17 +76,15 @@ public class AlertScheduler {
     }
 
     private void triggerNotificationAndSaveEvent(AlertPreference alert, WeatherResponseDTO weatherData) {
-        System.out.println("!!! CẢNH BÁO KÍCH HOẠT: " + alert.getWarningType() + " tại " + alert.getLocation().getCityName());
-
-        boolean notificationSuccess = true;
-        try{
-            // 1. Gửi thông báo đến người dùng
-            notificationService.sendAlert(alert, weatherData);
-        }catch (Exception e) {
-            System.err.println("Lỗi gửi thông báo cho preferenceId " + alert.getPreferenceId() + ": " + e.getMessage());
-            notificationSuccess = false;
-        }
-        // 2. Lưu WarningEvent (sự kiện đã xảy ra)
-        warningEventService.saveNewEvent(alert, weatherData, notificationSuccess);
+       if(!warningEventService.shouldSendNotification(alert)){
+           return;
+       }
+        System.out.println("!!! CẢNH BÁO KÍCH HOẠT: " + alert.getWarningType());
+       try {
+           notificationService.sendAlert(alert, weatherData);
+           warningEventService.saveNewEvent(alert, weatherData, true);
+       } catch (Exception e) {
+           warningEventService.saveNewEvent(alert, weatherData, false);
+       }
     }
 }
