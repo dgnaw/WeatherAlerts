@@ -32,29 +32,19 @@ public class AlertScheduler {
     public void checkAndTriggerAlerts() {
         System.out.println("--- Bắt đầu kiểm tra cảnh báo ---");
 
-        // 1. Lấy tất cả cá thết lập đã cảnh báo đang hoạt động
         List<AlertPreference> activeAlerts = alertService.findAllActiveAlerts();
 
         for (AlertPreference alert : activeAlerts) {
-            // 2. lấy tọa độ
-            Double lat = alert.getLocation().getLatitude();
-            Double lon = alert.getLocation().getLongitude();
-
             try{
-                // 3. Gọi WeatherClientService để lấy dữ liệu thời tiết hiện tại
-                WeatherResponseDTO weatherData = weatherClientService.getCurrentWeather(lat, lon);
+                WeatherResponseDTO weatherData = weatherSnapshotService.getWeatherDataForLocation(
+                        alert.getLocation(),
+                        weatherClientService
+                );
 
-                // 4. Áp dụng logic để kiểm tra ngưỡng
                 boolean isAlertTriggered = checkThreshhold(alert, weatherData);
-
-                if (isAlertTriggered) {
-                    // 5. Nếu vượt ngưỡng, kích hoạt thông báo và lưu Event
+                if (isAlertTriggered){
                     triggerNotificationAndSaveEvent(alert, weatherData);
                 }
-
-                // 6. Lưu WeatherSnapshot (Lưu dữ liệu thời tiết vừa lấy)
-                weatherSnapshotService.saveSnapshot(weatherData, alert.getLocation());
-
             }catch (RuntimeException e) {
                 System.err.println("Lỗi khi kiểm tra cảnh báo cho preferenceId " + alert.getPreferenceId() + ": " + e.getMessage());
             }

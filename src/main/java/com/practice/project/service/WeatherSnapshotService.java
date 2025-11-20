@@ -7,10 +7,13 @@ import com.practice.project.repository.WeatherRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 @Service
 public class WeatherSnapshotService {
     private final WeatherRepository weatherRepository;
-
+    private static final long FRESHNESS_THRESHOLD_MINUTES = 15;
     public WeatherSnapshotService(WeatherRepository weatherRepository) {
         this.weatherRepository = weatherRepository;
     }
@@ -30,8 +33,39 @@ public class WeatherSnapshotService {
 
         // gán khóa ngoại cho Location và Timestamp
         snapshot.setLocation(location);
-        snapshot.setTimestamp(weatherData.getTimestamp());
-
+        if (weatherData.getTimestamp() != null) {
+            snapshot.setTimestamp(weatherData.getTimestamp());
+        }else{
+            snapshot.setTimestamp(LocalDateTime.now());
+        }
         weatherRepository.save(snapshot);
+    }
+    public WeatherResponseDTO getWeatherDataForLocation(Location location, WeatherClientService weatherClient) {
+        Optional<WeatherSnapshot> latestSnapshot = weatherRepository.findTopByLocationOrderByTimestampDesc(location);
+        if (latestSnapshot.isPresent()) {
+            WeatherSnapshot snapshot = latestSnapshot.get();
+            LocalDateTime now = LocalDateTime.now();
+
+            if (snapshot.getTimestamp().isAfter(now.minusMinutes(FRESHNESS_THRESHOLD_MINUTES))){
+                System.out.println("LOG : Sử dụng dữ liệu Cache cho: " + location.getCityName());
+                return mapSnapshotToDTO(snapshot);
+            }
+        }
+        System.out.println("LOG: Gọi API mới cho " + location.getCityName());
+        WeatherResponseDTO newData = weatherClient.getCurrentWeather(location.getLatitude(), location.getLongitude());
+
+        saveSnapshot(newData, location);
+
+        return newData;
+    }
+
+    private WeatherResponseDTO mapSnapshotToDTO(WeatherSnapshot snapshot) {
+        WeatherResponseDTO dto = new WeatherResponseDTO();
+        dto.setTemperature(snapshot.getTemperature());
+        dto.setWindSpeed(snapshot.getWindSpeed());
+        dto.setHumidity(snapshot.getHumidity());
+        dto.setWeatherDescription(snapshot.getWeatherDescription());
+        dto.setTimestamp(snapshot.getTimestamp());
+        return dto;
     }
 }
