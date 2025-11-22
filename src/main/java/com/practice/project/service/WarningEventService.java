@@ -1,10 +1,13 @@
 package com.practice.project.service;
 
+import com.practice.project.dto.WarningEventDTO;
 import com.practice.project.dto.WeatherResponseDTO;
 import com.practice.project.model.AlertPreference;
 import com.practice.project.model.WarningEvent;
 import com.practice.project.repository.WarningRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,7 +24,7 @@ public class WarningEventService {
     }
 
     public boolean shouldSendNotification(AlertPreference alert){
-        Optional<WarningEvent> lastEventOpt = eventRepository.findTopByAlertPreferenceOrderByTriggeredTimeDesc(alert);
+        Optional<WarningEvent> lastEventOpt = eventRepository.findTopByPreferenceOrderByTriggeredTimeDesc(alert);
         if (lastEventOpt.isPresent()){
             return true;
         }
@@ -53,6 +56,26 @@ public class WarningEventService {
         event.setTriggeredTime(weatherData.getTimestamp());
         event.setIsSentSuccessfully(isNotificationSuccess);
         eventRepository.save(event);
+    }
+
+    public Page<WarningEventDTO> getUserHistory(Long userId, Pageable pageable) {
+        Page<WarningEvent> eventPage = eventRepository.findByPreference_User_UserId(userId, pageable);
+
+        return eventPage.map(this::mapToDTO);
+    }
+
+    private WarningEventDTO mapToDTO(WarningEvent warningEvent) {
+        WarningEventDTO dto = new WarningEventDTO();
+        dto.setEventId(warningEvent.getEventId());
+        dto.setWarningType(warningEvent.getWarningType());
+        dto.setActualValue(warningEvent.getActualValue());
+        dto.setTriggeredTime(warningEvent.getTriggeredTime());
+        dto.setIsSentSuccessfully(warningEvent.getIsSentSuccessfully());
+
+        if (warningEvent.getPreference() != null && warningEvent.getPreference().getLocation() != null) {
+            dto.setLocationName(warningEvent.getPreference().getLocation().getCityName());
+        }
+        return dto;
     }
 
     private Double getActualValueForEvent(String warningType, WeatherResponseDTO weatherData) {
